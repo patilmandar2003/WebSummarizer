@@ -14,22 +14,19 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import re
+from langchain_community.tools import DuckDuckGoSearchRun, DuckDuckGoSearchResults
+from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 
 # Defining state of the agent
 class AgentState(TypedDict, total=False):
     query: Optional[str]
-    web_text: Optional[str]
-    output: Optional[str]  
-    url: Optional[str]
-    search_item: Optional[str]
-    title: Optional[str]
-    text: Optional[str]
-    web_content: Optional[str]
-    filename: "web_content.json"
+    searchtype: Optional[str]
+    duck_search: Optional[str]
+    summarize_results: Optional[str]
 
 # Defining LLM
 model = OllamaLLM(
-    model = 'phi3:mini'
+   model = 'phi3:mini'
 )
 
 def UserQuery(state: AgentState):
@@ -46,112 +43,100 @@ def UserQuery(state: AgentState):
 
     }
 
-def DetermineSearch(state: AgentState):
+def SearchType(state: AgentState):
     """
-    Takes input from the user.
-    LLM parses it and determines what the user wants to search.
+    Determines whether the user wants information or news. 
     """
-
-    query = state['query']
-                                                                                             
-    prompt = f"""
-    Parse throught the user query and determine what the user wants to search, just one word from it which carries more weight of the search.
-
-    Example: 
-    user query: Which hemiphere is India located?
-    output: India
-
-    User_Query: {query}
-    """
-
-    # Call the LLM
-    messages = [HumanMessage(content=prompt)]
-    response = model.invoke(messages)
     
-    return {
-        "search_item": response
-    }
-
-def GenerateURL(state: AgentState):
-    """
-    This function generates URL.
-    """
-    base_url = "https://en.wikipedia.org/wiki/"
-    search = str(state['search_item'])
-
-    url = base_url+search
-
-    return {
-        "url": url
-    }
-
-def FetchWebpage(state: AgentState):
-    """Fetch webpage content using requests."""
-    url = state['url']
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-
-    return {
-        'web_text': requests
-    }
-
-def ExtractText(state: AgentState):
-    """Extract and clean visible text from HTML"""
-    html = state['web_text']
-    soup = BeautifulSoup(html, 'html-parser')
-
-
-    # Remove unwanted tags
-    for tag in soup(['script', 'style', 'nav', 'footer', 'header', 'aside']):
-        tag.decompose()
-
-    # Extract title and paragraphs
-    title = soup.title.string if soup.title else "No Title"
-    paragraphs = [p.get_text(strip=True) for p in soup.find_all('p')]
-
-    text = ' '.join(paragraphs)
-
-    # Clean text
-    text = re.sub(r'\s+', ' ', text)
-
-    return {
-        'text': text,
-        'title': title
-    }
-
-def SaveJSON(state: AgentState):
-    """Save extracted data as JSON"""
-    data = {
-        "url": state['url'],
-        "title": state['title'],
-        "content": state['text']
-    }
-
-    with open(state['filename'], "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-def SummarizeWeb(state: AgentState):
-    """Summarizes web content by reading data from json."""
-
-    with open(state['filename'], "r", encoding="utf-8") as f:
-        data = json.load(f)
+    user_query = state['query']
 
     prompt = f"""
-    Summarize the following webpage by providing requried information to the user from the user prompt.
+    Based on given query determine if the query is to search information or news.
+    Output only a single word.
 
-    Data: {data['content']}
+    Example 1: Results of a match or series.
+    output: news
 
-    user_prompt = {state['query']}
-    """        
+    Example 2: Indian National Cricket team. 
+    output: information
+
+    Example 3: Latest changes in Indian National team. 
+    output: news
+
+    Example 4: History of India.
+    output: information
+
+    User query: {user_query}
+
+    Note: Based on the query output only one single word
+    Output Option 1: information
+    Output Option 2: news
+    """
 
     messages = [HumanMessage(content=prompt)]
     response = model.invoke(messages)
 
-    print(f"{response}")
+    return {
+        'searchtype': response
+    }
+
+def NewsSearch(state: AgentState):
+    """Searches user query as a news search."""
+    
+    user_query = state['query']
+
+    search = DuckDuckGoSearchResults(backend="news")
+    results = search.invoke(user_query)
 
     return {
-        'output': response
+        'duck_search': results
+    }
+
+def InfoSearch(state: AgentState):
+    """Searches user query as an information search.""" 
+
+    user_query = state['query']
+
+    search = DuckDuckGoSearchResults()
+    results = search.invoke(user_query)
+
+    return {
+        'duck_search': results
+    }
+
+def RouteSearchType(state: AgentState) -> str:
+    """Routing agent process."""
+    if state['searchtype'].lower() == 'news':
+        return "news"
+    else:
+        return "information"
+
+def SummarizeResults(state: AgentState):
+    """Summarize search results."""
+    
+    search_results = state['duck_search']
+    search_type = state['searchtype']
+    user_query = state['query']
+
+    prompt = f"""
+    You will be provided a query and its web search results. 
+    I want you to summarize those results.
+    Summarize in required format if stated in the user query. 
+    Also use tabular formats wherever necessary. 
+    
+    user query: {user_query}
+    search type: {search_type}
+
+    web search results: {search_results}
+    """
+
+    messages = [HumanMessage(content=prompt)]
+    summary = model.invoke(messages)
+
+    print(summary)
+
+    return {
+        'summarize_results': summary
     }
 
 # Creating Stategraph and defining edges
@@ -159,22 +144,25 @@ graph = StateGraph(AgentState)
 
 # Add graph nodes
 graph.add_node("UserQuery", UserQuery)
-graph.add_node("DetermineSearch", DetermineSearch)
-graph.add_node("GenerateURL", GenerateURL)
-graph.add_node("FetchWebpage", FetchWebpage)
-graph.add_node("ExtractText", ExtractText)
-graph.add_node("SaveJSON", SaveJSON)
-graph.add_node("SummarizeWeb", SummarizeWeb)
+graph.add_node("SearchType", SearchType)
+graph.add_node("NewsSearch", NewsSearch)
+graph.add_node("InfoSearch", InfoSearch)
+graph.add_node("SummarizeResults", SummarizeResults)
 
 # Add edges connecting nodes
 graph.add_edge(START, "UserQuery")
-graph.add_edge("UserQuery", "DetermineSearch")
-graph.add_edge("DetermineSearch", "GenerateURL")
-graph.add_edge("GenerateURL", "FetchWebpage")
-graph.add_edge("FetchWebpage", "ExtractText")
-graph.add_edge("ExtractText", "SaveJSON")
-graph.add_edge("SaveJSON", "SummarizeWeb")
-graph.add_edge("SummarizeWeb", END)
+graph.add_edge("UserQuery", "SearchType")
+graph.add_conditional_edges(
+    "SearchType",
+    RouteSearchType,
+    {
+        "news": "NewsSearch",
+        "information": "InfoSearch"
+    }
+)
+graph.add_edge("NewsSearch", "SummarizeResults")
+graph.add_edge("InfoSearch", "SummarizeResults")
+graph.add_edge("SummarizeResults", END)
 
 # Compile the graph
 compiled_graph = graph.compile()
