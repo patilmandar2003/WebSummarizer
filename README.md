@@ -61,3 +61,5 @@ web-summarizer-agent/
 
 **5. Output:** A clear, concise, and informative summary is displayed.
 * * *
+
+*Note: UI to be added. Currently only CLI.*
