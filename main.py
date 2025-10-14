@@ -1,21 +1,8 @@
-import base64
-from typing import List, TypedDict, Annotated, Optional, Dict, Any
+from typing import TypedDict, Optional
 from langchain_ollama import OllamaLLM
-from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage
-from langgraph.graph.message import add_messages
+from langchain_core.messages import HumanMessage
 from langgraph.graph import START, END, StateGraph
-from langgraph.prebuilt import ToolNode, tools_condition
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_core.documents import Document
-import pypdf
-import asyncio
-from IPython.display import Image, display
-import requests
-from bs4 import BeautifulSoup
-import json
-import re
-from langchain_community.tools import DuckDuckGoSearchRun, DuckDuckGoSearchResults
-from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
+from langchain_community.tools import DuckDuckGoSearchResults
 
 # Defining state of the agent
 class AgentState(TypedDict, total=False):
