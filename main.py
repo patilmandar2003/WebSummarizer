@@ -3,6 +3,8 @@ from langchain_ollama import OllamaLLM
 from langchain_core.messages import HumanMessage
 from langgraph.graph import START, END, StateGraph
 from langchain_community.tools import DuckDuckGoSearchResults
+import streamlit as st
+
 
 # Defining state of the agent
 class AgentState(TypedDict, total=False):
@@ -23,8 +25,10 @@ def UserQuery(state: AgentState):
     Scraps the webpage (wikipedia).
     Provides summary.
     """
-    query = str(input(">>"))
+    # query = str(input(">>"))
+    # query = "What is the cost of living in Canberra?"
 
+    query = state['query']
     return {
         "query": query
 
@@ -71,9 +75,10 @@ def NewsSearch(state: AgentState):
     """Searches user query as a news search."""
     
     user_query = state['query']
-
+    
     search = DuckDuckGoSearchResults(backend="news")
     results = search.invoke(user_query)
+
 
     return {
         'duck_search': results
@@ -83,10 +88,10 @@ def InfoSearch(state: AgentState):
     """Searches user query as an information search.""" 
 
     user_query = state['query']
-
+    
     search = DuckDuckGoSearchResults()
     results = search.invoke(user_query)
-
+    
     return {
         'duck_search': results
     }
@@ -121,6 +126,7 @@ def SummarizeResults(state: AgentState):
     summary = model.invoke(messages)
 
     print(summary)
+    st.write(summary)
 
     return {
         'summarize_results': summary
@@ -154,5 +160,19 @@ graph.add_edge("SummarizeResults", END)
 # Compile the graph
 compiled_graph = graph.compile()
 
-web_summarize = compiled_graph.invoke({})
+# web_summarize = compiled_graph.invoke({})
 
+st.set_page_config(page_title="Web Summarizer Agent", page_icon="🧠", layout="wide")
+st.title("🌐 Web Summarizer Agent")
+
+query = st.text_input("Enter your search query:")
+
+if st.button("Summarize"):
+    if query.strip():
+        with st.spinner("Searching and summarizing... ⏳"):
+            # ✅ Pass the query properly to the graph
+            result = compiled_graph.invoke({"query": query})
+            st.subheader("📝 Summary:")
+            st.success("✅ Summary generated!")    
+    else:
+        st.warning("Please enter a query first.")
