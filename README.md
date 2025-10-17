@@ -23,7 +23,7 @@ It automates the research process by fetching and summarizing search results, sa
 Follow these steps to set up and run the project on your system.
 
 ### 1. Clone the Repository
-`git clone https://github.com/<your-username>/web-summarizer-agent.git`
+`git clone https://github.com/patilmandar2003/WebSummarizer.git`
 
 **Navigate to the directory:** `cd web-summarizer-agent`
 
@@ -57,6 +57,7 @@ Starting Virtual Environment
 * * *
 
 *Note: The project may take a while to execute; optimization is in progress*
+
 
 
 
