@@ -2,6 +2,9 @@
 The Web Summarizer Agent is an intelligent AI-powered tool that searches the web, analyzes multiple webpages, and provides a concise summary of the most relevant information — all in one place.
 
 It automates the research process by fetching and summarizing search results, saving users hours of manual reading and filtering.
+
+<img width="1920" height="1080" alt="Web summarizer" src="https://github.com/user-attachments/assets/cd207a79-e913-475e-bf1f-5c0629dfb39a" />
+
 * * *
 ## 🚀 Features
 
@@ -36,18 +39,8 @@ Starting Virtual Environment
 `pip install -r requirements.txt`
 
 ## Run the Project
-`python main.py`
+`streamlit run main.py`
 
-## 🧩 Project Structure:
-
-web-summarizer-agent/
-│
-├── main.py                # Entry point for the agent
-├── summarizer/            # Core summarization logic
-├── search_engine/         # Web scraping and search modules
-├── utils/                 # Helper functions and configs
-├── requirements.txt       # Required Python libraries
-└── README.md              # Project documentation
 * * *
 ## 🧠 How It Works
 
@@ -62,4 +55,5 @@ web-summarizer-agent/
 **5. Output:** A clear, concise, and informative summary is displayed.
 * * *
 
-*Note: UI to be added. Currently only CLI.*
+*Note: The project may take a while to execute; optimization is in progress*
+
