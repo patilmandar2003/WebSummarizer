@@ -24,7 +24,7 @@ Follow these steps to set up and run the project on your system.
 
 ### 1. Clone the Repository
 `git clone https://github.com/<your-username>/web-summarizer-agent.git`
-`cd web-summarizer-agent`
+Navigate to the directory: `cd web-summarizer-agent`
 
 ### 2. Create a Virtual Environment (Recommended)
 Creating Virtual Environment: `python -m venv venv`
@@ -56,4 +56,5 @@ Starting Virtual Environment
 * * *
 
 *Note: The project may take a while to execute; optimization is in progress*
+
 
